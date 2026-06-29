@@ -184,22 +184,61 @@ const B=['#E6F1FB','#B5D4F4','#85B7EB','#378ADD','#185FA5','#0C447C','#042C53'];
 const tm='#898781',gl='rgba(0,0,0,0.07)';
 let DATA={},QUARTER={},charts={};
 
+// Full CSV headers covering all 4 dashboard pages
 const CSV_HEADERS=[
-  'quarter','as_of','occupancy_rate','occupancy_after_undertaking',
+  // ── Page 1: Fund Overview (quarter-specific) ──
+  'quarter','as_of','avg_remaining_leasehold','total_asset_size_mthb',
+  // ── Page 3: Performance ──
+  'occupancy_rate','occupancy_after_undertaking',
   'total_revenue_mthb','total_expenses_mthb','net_profit_nii_mthb',
   'dpu_thb','dpu_period','dpu_book_close','dpu_payment_date',
   'wale_years','wale_incl_commit_years','total_nla_sqm','total_units',
+  // Lease Expiry (4 rows, label|pct pairs)
+  'lease1_label','lease1_pct','lease2_label','lease2_pct',
+  'lease3_label','lease3_pct','lease4_label','lease4_pct',
+  // Tenant Nationality (6 entries)
+  'nat1_label','nat1_pct','nat2_label','nat2_pct','nat3_label','nat3_pct',
+  'nat4_label','nat4_pct','nat5_label','nat5_pct','nat6_label','nat6_pct',
+  // Tenant Industry (6 entries)
+  'ind1_label','ind1_pct','ind2_label','ind2_pct','ind3_label','ind3_pct',
+  'ind4_label','ind4_pct','ind5_label','ind5_pct','ind6_label','ind6_pct',
+  // ── Page 4: Financials ──
   'total_assets_mthb','nav_total_mthb','nav_per_unit_thb',
-  'total_debt_mthb','ltv_pct','avg_remaining_maturity_years'
+  'total_debt_mthb','ltv_pct','avg_remaining_maturity_years',
+  // Loan repayment (3 years)
+  'loan1_year','loan1_existing','loan1_refinance',
+  'loan2_year','loan2_existing','loan2_refinance',
+  'loan3_year','loan3_existing','loan3_refinance',
+  // Distribution history (current year Q1-Q4)
+  'dist_year','dist_q1','dist_q2','dist_q3','dist_q4'
 ];
 
 const CSV_SAMPLE={
-  quarter:'2Q2026',as_of:'30 Jun 2026',occupancy_rate:94.5,occupancy_after_undertaking:94.5,
+  // Page 1
+  quarter:'2Q2026',as_of:'30 Jun 2026',avg_remaining_leasehold:'52.3 years',total_asset_size_mthb:13900,
+  // Page 3 Performance
+  occupancy_rate:94.5,occupancy_after_undertaking:94.5,
   total_revenue_mthb:255,total_expenses_mthb:34,net_profit_nii_mthb:190,
   dpu_thb:0.1450,dpu_period:'1 Apr – 30 Jun 2026',dpu_book_close:'26 Aug 2026',dpu_payment_date:'18 Sep 2026',
   wale_years:1.5,wale_incl_commit_years:1.8,total_nla_sqm:468990,total_units:170,
+  // Lease Expiry
+  lease1_label:'2026 (Q3-Q4)',lease1_pct:20.0,lease2_label:'2027',lease2_pct:28.0,
+  lease3_label:'2028',lease3_pct:33.0,lease4_label:'After 2028',lease4_pct:19.0,
+  // Tenant Nationality
+  nat1_label:'China',nat1_pct:34.0,nat2_label:'EU',nat2_pct:24.0,nat3_label:'Asia',nat3_pct:19.0,
+  nat4_label:'Japan',nat4_pct:9.5,nat5_label:'USA',nat5_pct:8.5,nat6_label:'Australia',nat6_pct:5.0,
+  // Tenant Industry
+  ind1_label:'Auto & Parts',ind1_pct:32.0,ind2_label:'Consumer',ind2_pct:23.0,ind3_label:'Logistic',ind3_pct:14.0,
+  ind4_label:'Electronic',ind4_pct:13.0,ind5_label:'Others',ind5_pct:13.0,ind6_label:'Packaging',ind6_pct:5.0,
+  // Page 4 Financials
   total_assets_mthb:13900,nav_total_mthb:8800,nav_per_unit_thb:8.32,
-  total_debt_mthb:4782,ltv_pct:34.4,avg_remaining_maturity_years:1.43
+  total_debt_mthb:4782,ltv_pct:34.2,avg_remaining_maturity_years:1.43,
+  // Loan repayment
+  loan1_year:'2026',loan1_existing:1500,loan1_refinance:0,
+  loan2_year:'2027',loan2_existing:1775,loan2_refinance:0,
+  loan3_year:'2028',loan3_existing:885,loan3_refinance:622,
+  // Distribution (current year)
+  dist_year:'2026',dist_q1:0.1434,dist_q2:0.1450,dist_q3:'',dist_q4:''
 };
 
 // Dashed separator plugin
@@ -230,19 +269,21 @@ async function init(){
 function buildQuarterSelector(){
   const sel=document.getElementById('quarterSelect');
   sel.innerHTML='';
-  DATA.quarterly.forEach((q,i)=>{
+  const lastIdx=DATA.quarterly.length-1;
+  for(let i=lastIdx;i>=0;i--){
     const opt=document.createElement('option');
-    opt.value=i;opt.textContent=q.quarter;sel.appendChild(opt);
-  });
-  sel.value=DATA.quarterly.length-1;
-  QUARTER=DATA.quarterly[DATA.quarterly.length-1];
+    opt.value=i;opt.textContent=DATA.quarterly[i].quarter;
+    sel.appendChild(opt);
+  }
+  sel.value=lastIdx;
+  QUARTER=DATA.quarterly[lastIdx];
   document.getElementById('headerSub').textContent=`WHA Industrial Leasehold REIT  ·  As of ${QUARTER.as_of}`;
 }
 
 function switchQuarter(){
   QUARTER=DATA.quarterly[document.getElementById('quarterSelect').value];
   document.getElementById('headerSub').textContent=`WHA Industrial Leasehold REIT  ·  As of ${QUARTER.as_of}`;
-  buildPage3();buildPage4();
+  buildPage1();buildPage3();buildPage4();
 }
 
 function showPage(idx,btn){
@@ -270,117 +311,153 @@ function handleCSVUpload(e){
   const file=e.target.files[0];
   if(!file)return;
   const status=document.getElementById('uploadStatus');
-  status.className='upload-status';
-  status.textContent='Processing...';
+  status.className='upload-status';status.textContent='Processing...';
 
-  Papa.parse(file,{
-    header:true,skipEmptyLines:true,
-    complete(results){
-      try{
-        const rows=results.data;
-        if(!rows.length){throw new Error('CSV is empty');}
+  Papa.parse(file,{header:true,skipEmptyLines:true,complete(results){
+    try{
+      const rows=results.data;
+      if(!rows.length)throw new Error('CSV is empty');
+      let added=0,updated=0;
 
-        let added=0,updated=0;
-        rows.forEach(row=>{
-          const q=row.quarter?.trim();
-          if(!q)return;
+      rows.forEach(row=>{
+        const q=row.quarter?.trim();if(!q)return;
+        const existing=DATA.quarterly.find(x=>x.quarter===q);
+        const base=existing||JSON.parse(JSON.stringify(DATA.quarterly[DATA.quarterly.length-1]));
 
-          // Build quarterly object from CSV row
-          const obj={
-            quarter:q,
-            as_of:row.as_of||'',
-            occupancy_rate:parseFloat(row.occupancy_rate)||0,
-            occupancy_after_undertaking:parseFloat(row.occupancy_after_undertaking)||parseFloat(row.occupancy_rate)||0,
-            total_revenue_mthb:parseFloat(row.total_revenue_mthb)||0,
-            total_expenses_mthb:parseFloat(row.total_expenses_mthb)||0,
-            net_profit_nii_mthb:parseFloat(row.net_profit_nii_mthb)||0,
-            dpu_thb:parseFloat(row.dpu_thb)||0,
-            dpu_period:row.dpu_period||'',
-            dpu_book_close:row.dpu_book_close||'',
-            dpu_payment_date:row.dpu_payment_date||'',
-            wale_years:parseFloat(row.wale_years)||0,
-            wale_incl_commit_years:parseFloat(row.wale_incl_commit_years)||0,
-            total_nla_sqm:parseFloat(row.total_nla_sqm)||468990,
-            total_units:parseFloat(row.total_units)||170,
-            total_assets_mthb:parseFloat(row.total_assets_mthb)||0,
-            nav_total_mthb:parseFloat(row.nav_total_mthb)||0,
-            nav_per_unit_thb:parseFloat(row.nav_per_unit_thb)||0,
-            total_debt_mthb:parseFloat(row.total_debt_mthb)||0,
-            ltv_pct:parseFloat(row.ltv_pct)||0,
-            avg_remaining_maturity_years:parseFloat(row.avg_remaining_maturity_years)||0,
-          };
+        // Core fields
+        const obj={...base,
+          quarter:q,
+          as_of:row.as_of||base.as_of,
+          avg_remaining_leasehold:row.avg_remaining_leasehold||base.avg_remaining_leasehold,
+          total_asset_size_mthb:row.total_asset_size_mthb?parseFloat(row.total_asset_size_mthb):base.total_asset_size_mthb,
+          occupancy_rate:row.occupancy_rate?parseFloat(row.occupancy_rate):base.occupancy_rate,
+          occupancy_after_undertaking:row.occupancy_after_undertaking?parseFloat(row.occupancy_after_undertaking):base.occupancy_after_undertaking,
+          total_revenue_mthb:row.total_revenue_mthb?parseFloat(row.total_revenue_mthb):base.total_revenue_mthb,
+          total_expenses_mthb:row.total_expenses_mthb?parseFloat(row.total_expenses_mthb):base.total_expenses_mthb,
+          net_profit_nii_mthb:row.net_profit_nii_mthb?parseFloat(row.net_profit_nii_mthb):base.net_profit_nii_mthb,
+          dpu_thb:row.dpu_thb?parseFloat(row.dpu_thb):base.dpu_thb,
+          dpu_period:row.dpu_period||base.dpu_period,
+          dpu_book_close:row.dpu_book_close||base.dpu_book_close,
+          dpu_payment_date:row.dpu_payment_date||base.dpu_payment_date,
+          wale_years:row.wale_years?parseFloat(row.wale_years):base.wale_years,
+          wale_incl_commit_years:row.wale_incl_commit_years?parseFloat(row.wale_incl_commit_years):base.wale_incl_commit_years,
+          total_nla_sqm:row.total_nla_sqm?parseFloat(row.total_nla_sqm):base.total_nla_sqm,
+          total_units:row.total_units?parseFloat(row.total_units):base.total_units,
+          total_assets_mthb:row.total_assets_mthb?parseFloat(row.total_assets_mthb):base.total_assets_mthb,
+          nav_total_mthb:row.nav_total_mthb?parseFloat(row.nav_total_mthb):base.nav_total_mthb,
+          nav_per_unit_thb:row.nav_per_unit_thb?parseFloat(row.nav_per_unit_thb):base.nav_per_unit_thb,
+          total_debt_mthb:row.total_debt_mthb?parseFloat(row.total_debt_mthb):base.total_debt_mthb,
+          ltv_pct:row.ltv_pct?parseFloat(row.ltv_pct):base.ltv_pct,
+          avg_remaining_maturity_years:row.avg_remaining_maturity_years?parseFloat(row.avg_remaining_maturity_years):base.avg_remaining_maturity_years,
+        };
 
-          // Keep existing nested data (tenant, lease expiry, etc.) if not in CSV
-          const existing=DATA.quarterly.find(x=>x.quarter===q);
-          if(existing){
-            // Merge — keep nested arrays from existing unless CSV has them
-            obj.tenant_nationality=existing.tenant_nationality||[];
-            obj.tenant_industry=existing.tenant_industry||[];
-            obj.lease_expiry=existing.lease_expiry||[];
-            obj.occupancy_trend=existing.occupancy_trend||{};
-            obj.distribution_history=existing.distribution_history||[];
-            obj.loan_repayment=existing.loan_repayment||[];
-            const idx=DATA.quarterly.indexOf(existing);
-            DATA.quarterly[idx]=obj;
-            updated++;
-          } else {
-            // New quarter — copy nested arrays from latest quarter as baseline
-            const latest=DATA.quarterly[DATA.quarterly.length-1];
-            obj.tenant_nationality=JSON.parse(JSON.stringify(latest.tenant_nationality||[]));
-            obj.tenant_industry=JSON.parse(JSON.stringify(latest.tenant_industry||[]));
-            obj.lease_expiry=JSON.parse(JSON.stringify(latest.lease_expiry||[]));
-            obj.occupancy_trend=JSON.parse(JSON.stringify(latest.occupancy_trend||{}));
-            obj.distribution_history=JSON.parse(JSON.stringify(latest.distribution_history||[]));
-            obj.loan_repayment=JSON.parse(JSON.stringify(latest.loan_repayment||[]));
-            // Append new DPU to distribution history
-            if(obj.dpu_thb>0){
-              const qNum=q.match(/^(\d)Q(\d{4})$/);
-              if(qNum){
-                const qn=parseInt(qNum[1]),yr=q.replace(/^\dQ/,'');
-                const dh=obj.distribution_history;
-                let yEntry=dh.find(x=>x.year===yr);
-                if(!yEntry){yEntry={year:yr,q1:null,q2:null,q3:null,q4:null};dh.push(yEntry);}
-                yEntry[`q${qn}`]=obj.dpu_thb;
-              }
-            }
-            DATA.quarterly.push(obj);
-            added++;
-          }
-        });
+        // Lease expiry
+        if(row.lease1_label){
+          obj.lease_expiry=[];
+          for(let i=1;i<=4;i++){if(row[`lease${i}_label`])obj.lease_expiry.push({label:row[`lease${i}_label`],pct:parseFloat(row[`lease${i}_pct`])||0});}
+        }
+        // Tenant nationality
+        if(row.nat1_label){
+          obj.tenant_nationality=[];
+          for(let i=1;i<=6;i++){if(row[`nat${i}_label`])obj.tenant_nationality.push({label:row[`nat${i}_label`],pct:parseFloat(row[`nat${i}_pct`])||0});}
+        }
+        // Tenant industry
+        if(row.ind1_label){
+          obj.tenant_industry=[];
+          for(let i=1;i<=6;i++){if(row[`ind${i}_label`])obj.tenant_industry.push({label:row[`ind${i}_label`],pct:parseFloat(row[`ind${i}_pct`])||0});}
+        }
+        // Loan repayment
+        if(row.loan1_year){
+          obj.loan_repayment=[];
+          for(let i=1;i<=3;i++){if(row[`loan${i}_year`])obj.loan_repayment.push({year:row[`loan${i}_year`],existing:parseFloat(row[`loan${i}_existing`])||0,refinance:parseFloat(row[`loan${i}_refinance`])||0});}
+        }
+        // Distribution history — append/update current year row
+        if(row.dist_year){
+          const yr=row.dist_year;
+          const dh=JSON.parse(JSON.stringify(obj.distribution_history||[]));
+          let yEntry=dh.find(x=>x.year===yr);
+          if(!yEntry){yEntry={year:yr,q1:null,q2:null,q3:null,q4:null};dh.push(yEntry);}
+          ['q1','q2','q3','q4'].forEach(k=>{const v=row[`dist_${k}`];if(v!==undefined&&v!=='')yEntry[k]=parseFloat(v)||null;});
+          obj.distribution_history=dh;
+        }
 
-        buildQuarterSelector();
-        // Refresh current active page
-        const activeIdx=[...document.querySelectorAll('.page')].findIndex(p=>p.classList.contains('active'));
-        if(activeIdx===2)buildPage3();
-        if(activeIdx===3)buildPage4();
+        if(existing){
+          const idx=DATA.quarterly.indexOf(existing);
+          DATA.quarterly[idx]=obj;updated++;
+        }else{
+          DATA.quarterly.push(obj);added++;
+        }
+      });
 
-        status.className='upload-status ok';
-        status.textContent=`✓ Upload successful — ${added} quarter(s) added, ${updated} updated. Click "Download data.json" to save for GitHub.`;
-        e.target.value='';
-      }catch(err){
-        status.className='upload-status err';
-        status.textContent=`✗ Error: ${err.message}`;
-      }
-    },
-    error(err){
-      document.getElementById('uploadStatus').className='upload-status err';
-      document.getElementById('uploadStatus').textContent=`✗ Parse error: ${err.message}`;
-    }
-  });
+      // Sort quarters chronologically
+      DATA.quarterly.sort((a,b)=>{
+        const parse=s=>{const m=s.match(/^(\d)Q(\d{4})$/);return m?parseInt(m[2])*10+parseInt(m[1]):0;};
+        return parse(a.quarter)-parse(b.quarter);
+      });
+
+      buildQuarterSelector();
+      const activeIdx=[...document.querySelectorAll('.page')].findIndex(p=>p.classList.contains('active'));
+      if(activeIdx===0)buildPage1();
+      if(activeIdx===2)buildPage3();
+      if(activeIdx===3)buildPage4();
+
+      status.className='upload-status ok';
+      status.textContent=`✓ Upload successful — ${added} quarter(s) added, ${updated} updated. Click "Download data.json" to save for GitHub.`;
+      e.target.value='';
+    }catch(err){status.className='upload-status err';status.textContent=`✗ Error: ${err.message}`;}
+  },error(err){document.getElementById('uploadStatus').className='upload-status err';document.getElementById('uploadStatus').textContent=`✗ Parse error: ${err.message}`;}});
 }
 
 // ── DOWNLOAD TEMPLATE ──
 function downloadTemplate(){
-  const header=CSV_HEADERS.join(',');
-  const sample=CSV_HEADERS.map(h=>{
-    const v=CSV_SAMPLE[h]??'';
-    return String(v).includes(',')?`"${v}"`:v;
-  }).join(',');
-  const csv=`${header}\n${sample}\n`;
+  // Build template from actual latest quarter data so columns are pre-filled as example
+  const latest=DATA.quarterly[DATA.quarterly.length-1];
+  const nextQ=(()=>{const m=latest.quarter.match(/^(\d)Q(\d{4})$/);if(!m)return'2Q2026';let qn=parseInt(m[1])+1,yr=parseInt(m[2]);if(qn>4){qn=1;yr++;}return`${qn}Q${yr}`;})();
+
+  const rows=[CSV_HEADERS];
+  const sample={
+    quarter:nextQ, as_of:'',avg_remaining_leasehold:'',total_asset_size_mthb:'',
+    occupancy_rate:'',occupancy_after_undertaking:'',
+    total_revenue_mthb:'',total_expenses_mthb:'',net_profit_nii_mthb:'',
+    dpu_thb:'',dpu_period:`1 ${['','Jan','Apr','Jul','Oct'][parseInt(nextQ[0])]} – ${['','Mar','Jun','Sep','Dec'][parseInt(nextQ[0])]} ${nextQ.slice(2)}`,
+    dpu_book_close:'',dpu_payment_date:'',
+    wale_years:'',wale_incl_commit_years:'',total_nla_sqm:latest.total_nla_sqm,total_units:latest.total_units,
+    // Lease expiry — copy labels from latest, clear pcts
+    lease1_label:latest.lease_expiry[0]?.label||'',lease1_pct:'',
+    lease2_label:latest.lease_expiry[1]?.label||'',lease2_pct:'',
+    lease3_label:latest.lease_expiry[2]?.label||'',lease3_pct:'',
+    lease4_label:latest.lease_expiry[3]?.label||'',lease4_pct:'',
+    // Tenant nationality — copy labels
+    nat1_label:latest.tenant_nationality[0]?.label||'',nat1_pct:'',
+    nat2_label:latest.tenant_nationality[1]?.label||'',nat2_pct:'',
+    nat3_label:latest.tenant_nationality[2]?.label||'',nat3_pct:'',
+    nat4_label:latest.tenant_nationality[3]?.label||'',nat4_pct:'',
+    nat5_label:latest.tenant_nationality[4]?.label||'',nat5_pct:'',
+    nat6_label:latest.tenant_nationality[5]?.label||'',nat6_pct:'',
+    // Tenant industry — copy labels
+    ind1_label:latest.tenant_industry[0]?.label||'',ind1_pct:'',
+    ind2_label:latest.tenant_industry[1]?.label||'',ind2_pct:'',
+    ind3_label:latest.tenant_industry[2]?.label||'',ind3_pct:'',
+    ind4_label:latest.tenant_industry[3]?.label||'',ind4_pct:'',
+    ind5_label:latest.tenant_industry[4]?.label||'',ind5_pct:'',
+    ind6_label:latest.tenant_industry[5]?.label||'',ind6_pct:'',
+    // Financials
+    total_assets_mthb:'',nav_total_mthb:'',nav_per_unit_thb:'',
+    total_debt_mthb:latest.total_debt_mthb,ltv_pct:'',avg_remaining_maturity_years:'',
+    // Loan — copy years from latest
+    loan1_year:latest.loan_repayment[0]?.year||'',loan1_existing:'',loan1_refinance:'',
+    loan2_year:latest.loan_repayment[1]?.year||'',loan2_existing:'',loan2_refinance:'',
+    loan3_year:latest.loan_repayment[2]?.year||'',loan3_existing:'',loan3_refinance:'',
+    // Distribution
+    dist_year:nextQ.slice(2),dist_q1:'',dist_q2:'',dist_q3:'',dist_q4:''
+  };
+  rows.push(CSV_HEADERS.map(h=>{const v=sample[h]??'';return String(v).includes(',')?`"${v}"`:v;}));
+
+  const csv=rows.map(r=>Array.isArray(r)?r.join(','):r).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='whair_quarterly_template.csv';
+  a.download=`whair_${nextQ}_template.csv`;
   a.click();
 }
 
@@ -423,6 +500,12 @@ function showCSVGuide(){
 // ── PAGE 1 ──
 function buildPage1(){
   const f=DATA.fund_info;
+  const q=QUARTER; // quarter-specific fields override fund_info where applicable
+  const avgLease = q.avg_remaining_leasehold || f.avg_remaining_leasehold;
+  const totalAsset = q.total_assets_mthb || f.total_asset_size_mthb;
+  const asOf = q.as_of || f.total_asset_as_of;
+  const totalUnits = q.total_units || f.total_units;
+  const totalNla = q.total_nla_sqm || f.total_nla_sqm;
   document.getElementById('infoTable').innerHTML=`
     <tr><td>REIT Name</td><td>${f.name}</td></tr>
     <tr><td>Inception Date</td><td>${f.inception_date}</td></tr>
@@ -431,11 +514,11 @@ function buildPage1(){
     <tr><td>Trustee</td><td>${f.trustee}</td></tr>
     <tr><td>Property Manager</td><td>${f.property_manager}</td></tr>
     <tr><td>Investment Type</td><td>${f.investment_type}<br><span class="badge">Leasehold 100%</span><span class="badge">Freehold 0%</span></td></tr>
-    <tr><td>Avg. Remaining Leasehold Life</td><td>${f.avg_remaining_leasehold}</td></tr>
+    <tr><td>Avg. Remaining Leasehold Life</td><td>${avgLease}</td></tr>
     <tr><td>Investment Assets</td><td>${f.investment_assets}</td></tr>
-    <tr><td>Total Buildings</td><td><strong>${f.total_units} Units</strong> · NLA ${f.total_nla_sqm.toLocaleString()} Sq.m. (100%)<br><span style="font-size:12px;color:#666">Ready Built Factory: ${f.rbf_units} units · ${f.rbf_nla_sqm.toLocaleString()} Sq.m. (${f.rbf_pct}%)<br>Ready Built Warehouse: ${f.rbw_units} units · ${f.rbw_nla_sqm.toLocaleString()} Sq.m. (${f.rbw_pct}%)</span></td></tr>
+    <tr><td>Total Buildings</td><td><strong>${totalUnits} Units</strong> · NLA ${totalNla.toLocaleString()} Sq.m. (100%)<br><span style="font-size:12px;color:#666">Ready Built Factory: ${f.rbf_units} units · ${f.rbf_nla_sqm.toLocaleString()} Sq.m. (${f.rbf_pct}%)<br>Ready Built Warehouse: ${f.rbw_units} units · ${f.rbw_nla_sqm.toLocaleString()} Sq.m. (${f.rbw_pct}%)</span></td></tr>
     <tr><td>Total Roof Top Area for Rent</td><td>${f.rooftop_sqm.toLocaleString()} Sq.m.</td></tr>
-    <tr><td>Total Asset Size</td><td><strong>${f.total_asset_size_mthb.toLocaleString()} Million Baht</strong> (as of ${f.total_asset_as_of})</td></tr>
+    <tr><td>Total Asset Size</td><td><strong>${totalAsset.toLocaleString()} Million Baht</strong> (as of ${asOf})</td></tr>
     <tr><td>Additional Investments</td><td>${f.additional_investments} · Latest: ${f.latest_investment}</td></tr>`;
 }
 
@@ -481,21 +564,25 @@ function buildPage3(){
 function buildPage4(){
   const q=QUARTER,ann=DATA.annual;
   const annLabels=ann.map(a=>a.year);
-  const qLabels=DATA.quarterly.map(x=>x.quarter);
-  const allLabels=[...annLabels,...qLabels];
+
+  // Only show quarters up to and including selected quarter
+  const selectedIdx=DATA.quarterly.indexOf(q);
+  const visibleQ=DATA.quarterly.slice(0,selectedIdx+1);
+
+  const allLabels=[...annLabels,...visibleQ.map(x=>x.quarter)];
   const SEP=annLabels.length-1;
   const bc=(i,d,l)=>i<=SEP?d:l;
 
   destroyChart('incomeChart');
   charts['incomeChart']=new Chart(document.getElementById('incomeChart'),{type:'bar',data:{labels:allLabels,datasets:[
-    {label:'Total Income',data:[...ann.map(a=>a.total_income),...DATA.quarterly.map(x=>x.total_revenue_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
-    {label:'Net Investment Income',data:[...ann.map(a=>a.nii),...DATA.quarterly.map(x=>x.net_profit_nii_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
+    {label:'Total Income',data:[...ann.map(a=>a.total_income),...visibleQ.map(x=>x.total_revenue_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
+    {label:'Net Investment Income',data:[...ann.map(a=>a.nii),...visibleQ.map(x=>x.net_profit_nii_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
   ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:SEP,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{ticks:{color:tm,font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{color:tm,font:{size:10}},grid:{color:gl}}}}});
 
   destroyChart('assetChart');
   charts['assetChart']=new Chart(document.getElementById('assetChart'),{type:'bar',data:{labels:allLabels,datasets:[
-    {label:'Total Assets',data:[...ann.map(a=>a.total_assets),...DATA.quarterly.map(x=>x.total_assets_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
-    {label:'Net Assets Value',data:[...ann.map(a=>a.nav),...DATA.quarterly.map(x=>x.nav_total_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
+    {label:'Total Assets',data:[...ann.map(a=>a.total_assets),...visibleQ.map(x=>x.total_assets_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
+    {label:'Net Assets Value',data:[...ann.map(a=>a.nav),...visibleQ.map(x=>x.nav_total_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
   ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:SEP,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{ticks:{color:tm,font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{color:tm,font:{size:10},callback:v=>(v/1000).toFixed(0)+'k'},grid:{color:gl}}}}});
 
   destroyChart('loanChart');
