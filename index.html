@@ -500,9 +500,11 @@ function showCSVGuide(){
 // ── PAGE 1 ──
 function buildPage1(){
   const f=DATA.fund_info;
-  const q=QUARTER; // quarter-specific fields override fund_info where applicable
-  const avgLease = q.avg_remaining_leasehold || f.avg_remaining_leasehold;
-  const totalAsset = q.total_assets_mthb || f.total_asset_size_mthb;
+  const q=QUARTER;
+  // Use quarter-specific value if exists, fallback to fund_info
+  const avgLease = (q.avg_remaining_leasehold && q.avg_remaining_leasehold!==f.avg_remaining_leasehold)
+    ? q.avg_remaining_leasehold : q.avg_remaining_leasehold || f.avg_remaining_leasehold;
+  const totalAsset = q.total_asset_size_mthb || q.total_assets_mthb || f.total_asset_size_mthb;
   const asOf = q.as_of || f.total_asset_as_of;
   const totalUnits = q.total_units || f.total_units;
   const totalNla = q.total_nla_sqm || f.total_nla_sqm;
@@ -531,6 +533,39 @@ function buildPage2(){
   donut('assetTypeChart',[`Ready Built Factory (RBF) — ${f.rbf_nla_sqm.toLocaleString()} Sq.m.`,`Ready Built Warehouse (RBW) — ${f.rbw_nla_sqm.toLocaleString()} Sq.m.`],[f.rbf_pct,f.rbw_pct],[B[5],B[2]]);
 }
 
+// ── Helper: parse quarter string → {qn, yr} ──
+function parseQ(s){const m=s.match(/^(\d)Q(\d{4})$/);return m?{qn:parseInt(m[1]),yr:parseInt(m[2])}:null;}
+
+// ── Helper: build smart chart data — collapses prior-year Qs into annual, keeps current-year Qs separate ──
+function buildChartSeries(selectedQ, annualArr, quarterlyArr, getAnnualVal, getQVal){
+  const sel=parseQ(selectedQ.quarter);
+  if(!sel) return {labels:[],data:[],sepIdx:annualArr.length-1};
+
+  // Annual bars: years before selected year that exist in annual[]
+  const annFiltered=annualArr.filter(a=>parseInt(a.year)<sel.yr);
+
+  // If selected year has a full-year entry in annual[] AND we're in a new year (1Q of new year),
+  // also include the full prior year as annual bar
+  const priorYearAnnual=annualArr.find(a=>parseInt(a.year)===sel.yr-1);
+  const hasFullPriorYear=annualArr.find(a=>parseInt(a.year)===sel.yr);
+
+  // Quarters to show: only Qs in the same year as selected, up to and including selected
+  const selectedIdx=quarterlyArr.indexOf(selectedQ);
+  const visibleQs=quarterlyArr.slice(0,selectedIdx+1);
+  const sameYearQs=visibleQs.filter(q=>{const p=parseQ(q.quarter);return p&&p.yr===sel.yr;});
+
+  // If there are same-year quarters from prior years collapsed into annual, include them
+  const priorYearQsAsAnnual=annualArr.filter(a=>parseInt(a.year)<sel.yr);
+
+  const labels=[...priorYearQsAsAnnual.map(a=>a.year),...sameYearQs.map(q=>q.quarter)];
+  const annVals=priorYearQsAsAnnual.map(a=>getAnnualVal(a));
+  const qVals=sameYearQs.map(q=>getQVal(q));
+  const data=[...annVals,...qVals];
+  const sepIdx=priorYearQsAsAnnual.length-1; // dashed line after last annual bar
+
+  return {labels,data,sepIdx,annCount:priorYearQsAsAnnual.length};
+}
+
 // ── PAGE 3 ──
 function buildPage3(){
   const q=QUARTER;
@@ -543,6 +578,7 @@ function buildPage3(){
     {l:'Total NLA',v:q.total_nla_sqm.toLocaleString(),u:'Sq.m.',s:`${q.total_units} units`},
   ].map(k=>`<div class="kpi-card"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}<span class="kpi-unit">${k.u}</span></div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
+  // Occupancy trend — show only up to selected quarter's data points
   destroyChart('occChart');
   const ot=q.occupancy_trend;
   charts['occChart']=new Chart(document.getElementById('occChart'),{type:'line',data:{labels:ot.labels,datasets:[
@@ -562,33 +598,35 @@ function buildPage3(){
 
 // ── PAGE 4 ──
 function buildPage4(){
-  const q=QUARTER,ann=DATA.annual;
-  const annLabels=ann.map(a=>a.year);
-
-  // Only show quarters up to and including selected quarter
+  const q=QUARTER, ann=DATA.annual;
+  const sel=parseQ(q.quarter);
   const selectedIdx=DATA.quarterly.indexOf(q);
   const visibleQ=DATA.quarterly.slice(0,selectedIdx+1);
 
-  const allLabels=[...annLabels,...visibleQ.map(x=>x.quarter)];
-  const SEP=annLabels.length-1;
+  // Smart series: annual bars for prior years, quarterly bars for current year only
+  const priorYearAnn=ann.filter(a=>parseInt(a.year)<sel.yr);
+  const sameYearQs=visibleQ.filter(x=>{const p=parseQ(x.quarter);return p&&p.yr===sel.yr;});
+
+  const allLabels=[...priorYearAnn.map(a=>a.year),...sameYearQs.map(x=>x.quarter)];
+  const SEP=priorYearAnn.length-1; // dashed line after last annual bar
   const bc=(i,d,l)=>i<=SEP?d:l;
 
   destroyChart('incomeChart');
   charts['incomeChart']=new Chart(document.getElementById('incomeChart'),{type:'bar',data:{labels:allLabels,datasets:[
-    {label:'Total Income',data:[...ann.map(a=>a.total_income),...visibleQ.map(x=>x.total_revenue_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
-    {label:'Net Investment Income',data:[...ann.map(a=>a.nii),...visibleQ.map(x=>x.net_profit_nii_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
+    {label:'Total Income',   data:[...priorYearAnn.map(a=>a.total_income),...sameYearQs.map(x=>x.total_revenue_mthb)],  backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
+    {label:'Net Investment Income',data:[...priorYearAnn.map(a=>a.nii),   ...sameYearQs.map(x=>x.net_profit_nii_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
   ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:SEP,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{ticks:{color:tm,font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{color:tm,font:{size:10}},grid:{color:gl}}}}});
 
   destroyChart('assetChart');
   charts['assetChart']=new Chart(document.getElementById('assetChart'),{type:'bar',data:{labels:allLabels,datasets:[
-    {label:'Total Assets',data:[...ann.map(a=>a.total_assets),...visibleQ.map(x=>x.total_assets_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
-    {label:'Net Assets Value',data:[...ann.map(a=>a.nav),...visibleQ.map(x=>x.nav_total_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
+    {label:'Total Assets',   data:[...priorYearAnn.map(a=>a.total_assets),...sameYearQs.map(x=>x.total_assets_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
+    {label:'Net Assets Value',data:[...priorYearAnn.map(a=>a.nav),        ...sameYearQs.map(x=>x.nav_total_mthb)],   backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
   ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:SEP,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{ticks:{color:tm,font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{color:tm,font:{size:10},callback:v=>(v/1000).toFixed(0)+'k'},grid:{color:gl}}}}});
 
   destroyChart('loanChart');
   charts['loanChart']=new Chart(document.getElementById('loanChart'),{type:'bar',data:{labels:q.loan_repayment.map(x=>x.year),datasets:[
-    {label:'Existing Loan',data:q.loan_repayment.map(x=>x.existing),backgroundColor:B[4],borderRadius:3,borderSkipped:false},
-    {label:'Refinance 2025',data:q.loan_repayment.map(x=>x.refinance),backgroundColor:B[2],borderRadius:3,borderSkipped:false}
+    {label:'Existing Loan',  data:q.loan_repayment.map(x=>x.existing),  backgroundColor:B[4],borderRadius:3,borderSkipped:false},
+    {label:'Refinance 2025', data:q.loan_repayment.map(x=>x.refinance), backgroundColor:B[2],borderRadius:3,borderSkipped:false}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{stacked:true,ticks:{color:tm,font:{size:11}}},y:{stacked:true,ticks:{color:tm,font:{size:10}},grid:{color:gl}}}}});
 
   document.getElementById('debtTable').innerHTML=`
