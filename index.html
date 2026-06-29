@@ -579,39 +579,30 @@ function buildPage3(){
     {l:'Total NLA',v:q.total_nla_sqm.toLocaleString(),u:'Sq.m.',s:`${q.total_units} units`},
   ].map(k=>`<div class="kpi-card"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}<span class="kpi-unit">${k.u}</span></div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
-  // ── Occupancy Trend: smart annual/quarterly collapse ──
+  // ── Occupancy Trend ──
+  // Logic: use occupancy_trend from selected Q as base (has annual data for prior years)
+  // Replace any current-year entries in the trend with individual Q data points
   destroyChart('occChart');
 
   const selectedIdx=DATA.quarterly.indexOf(q);
   const visibleQs=DATA.quarterly.slice(0,selectedIdx+1);
   const ot=q.occupancy_trend;
 
-  // Prior years = all annual-style labels in occupancy_trend that are < selected year
-  // These are years like "2016","2017"..."2025" (no "Q" in label)
-  const priorLabels=ot.labels.filter(l=>!/Q/i.test(l)&&parseInt(l)<sel.yr);
-  const priorBefore=priorLabels.map(l=>{const i=ot.labels.indexOf(l);return i>=0?ot.before[i]:null;});
-  const priorAfter =priorLabels.map(l=>{const i=ot.labels.indexOf(l);return i>=0?ot.after[i]:null;});
+  // Separate labels: annual (no Q in label, year < sel.yr OR year === sel.yr-1) vs current-year Qs
+  // Use all non-quarterly labels from occupancy_trend as prior annual data
+  const annualLabels=ot.labels.filter(l=>!/Q/i.test(l));
+  const annualBefore=annualLabels.map(l=>{const i=ot.labels.indexOf(l);return ot.before[i];});
+  const annualAfter =annualLabels.map(l=>{const i=ot.labels.indexOf(l);return ot.after[i];});
 
-  // Prior year that IS the year before selected — include it as annual bar too
-  // e.g. when viewing 1Q2026, include "2025" from occupancy_trend
-  const prevYearLabel=String(sel.yr-1);
-  const prevYearIdx=ot.labels.indexOf(prevYearLabel);
-  const hasPrevYearInTrend=prevYearIdx>=0&&!priorLabels.includes(prevYearLabel);
-  if(hasPrevYearInTrend){
-    priorLabels.push(prevYearLabel);
-    priorBefore.push(ot.before[prevYearIdx]);
-    priorAfter.push(ot.after[prevYearIdx]);
-  }
-
-  // Current year Qs up to selected quarter
+  // Current year Qs up to selected
   const curQs=visibleQs.filter(x=>{const p=parseQ(x.quarter);return p&&p.yr===sel.yr;});
   const curLabels=curQs.map(x=>x.quarter);
   const curBefore=curQs.map(x=>x.occupancy_rate);
   const curAfter =curQs.map(x=>x.occupancy_after_undertaking);
 
-  const occLabels=[...priorLabels,...curLabels];
-  const occBefore=[...priorBefore,...curBefore];
-  const occAfter =[...priorAfter,...curAfter];
+  const occLabels=[...annualLabels,...curLabels];
+  const occBefore=[...annualBefore,...curBefore];
+  const occAfter =[...annualAfter,...curAfter];
 
   charts['occChart']=new Chart(document.getElementById('occChart'),{type:'line',data:{labels:occLabels,datasets:[
     {label:'Before undertaking',data:occBefore,borderColor:B[5],backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:0.3},
