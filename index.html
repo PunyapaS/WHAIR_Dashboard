@@ -5,86 +5,96 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHAIR IR Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root {
-    --navy: #042C53; --blue5: #0C447C; --blue4: #185FA5;
-    --blue3: #378ADD; --blue2: #85B7EB; --blue1: #B5D4F4; --blue0: #E6F1FB;
-    --text: #1a1a1a; --text2: #52514e; --muted: #898781;
-    --border: rgba(0,0,0,0.10); --surface: #f8f8f7; --card: #ffffff;
-    --radius: 8px;
+    --navy:#042C53;--blue5:#0C447C;--blue4:#185FA5;--blue3:#378ADD;
+    --blue2:#85B7EB;--blue1:#B5D4F4;--blue0:#E6F1FB;
+    --text:#1a1a1a;--text2:#52514e;--muted:#898781;
+    --border:rgba(0,0,0,0.10);--surface:#f8f8f7;--card:#ffffff;--radius:8px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--surface); color: var(--text); min-height: 100vh; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--surface);color:var(--text);min-height:100vh}
 
-  /* Header */
-  .header { background: var(--navy); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-  .header-left h1 { font-size: 18px; font-weight: 500; }
-  .header-left p { font-size: 12px; opacity: 0.7; margin-top: 2px; }
-  .quarter-selector { display: flex; align-items: center; gap: 8px; }
-  .quarter-selector label { font-size: 12px; opacity: 0.8; }
-  .quarter-selector select { padding: 5px 10px; border-radius: var(--radius); border: none; font-size: 13px; background: rgba(255,255,255,0.15); color: #fff; cursor: pointer; }
-  .quarter-selector select option { background: var(--navy); }
+  .header{background:var(--navy);color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .header-left h1{font-size:18px;font-weight:500}
+  .header-left p{font-size:12px;opacity:0.7;margin-top:2px}
+  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .quarter-selector{display:flex;align-items:center;gap:8px}
+  .quarter-selector label{font-size:12px;opacity:0.8}
+  .quarter-selector select{padding:5px 10px;border-radius:var(--radius);border:none;font-size:13px;background:rgba(255,255,255,0.15);color:#fff;cursor:pointer}
+  .quarter-selector select option{background:var(--navy)}
 
-  /* Nav tabs */
-  .nav { background: #fff; border-bottom: 0.5px solid var(--border); padding: 0 24px; display: flex; gap: 0; overflow-x: auto; }
-  .ntab { padding: 12px 20px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; }
-  .ntab:hover { color: var(--text); }
-  .ntab.active { color: var(--blue4); border-bottom-color: var(--blue4); font-weight: 500; }
+  /* Upload toolbar */
+  .toolbar{background:#fff;border-bottom:0.5px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .btn{padding:6px 14px;border-radius:var(--radius);font-size:12px;cursor:pointer;border:0.5px solid var(--border);background:var(--surface);color:var(--text2);transition:all 0.15s;white-space:nowrap}
+  .btn:hover{background:var(--blue0);border-color:var(--blue3);color:var(--blue4)}
+  .btn-primary{background:var(--blue4);color:#fff;border-color:var(--blue4)}
+  .btn-primary:hover{background:var(--blue5);border-color:var(--blue5);color:#fff}
+  .upload-status{font-size:12px;color:var(--muted);flex:1}
+  .upload-status.ok{color:#0F6E56}
+  .upload-status.err{color:#A32D2D}
+  #csvFileInput{display:none}
 
-  /* Content */
-  .content { max-width: 1100px; margin: 0 auto; padding: 20px 24px; }
-  .page { display: none; } .page.active { display: block; }
-  .section-label { font-size: 10px; font-weight: 500; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; margin: 0 0 10px; }
+  .nav{background:#fff;border-bottom:0.5px solid var(--border);padding:0 24px;display:flex;gap:0;overflow-x:auto}
+  .ntab{padding:12px 20px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s}
+  .ntab:hover{color:var(--text)}
+  .ntab.active{color:var(--blue4);border-bottom-color:var(--blue4);font-weight:500}
 
-  /* Cards */
-  .card { background: var(--card); border-radius: 12px; border: 0.5px solid var(--border); padding: 16px; }
-  .card h3 { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
-  .card p { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-  .chart-wrap { position: relative; }
+  .content{max-width:1100px;margin:0 auto;padding:20px 24px}
+  .page{display:none}.page.active{display:block}
+  .section-label{font-size:10px;font-weight:500;letter-spacing:0.06em;color:var(--muted);text-transform:uppercase;margin:0 0 10px}
 
-  /* Page 1 info table */
-  .info-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .info-table tr { border-bottom: 0.5px solid var(--border); }
-  .info-table td:first-child { padding: 10px 14px; font-weight: 500; color: #E6F1FB; background: #1a3a5c; width: 34%; vertical-align: top; }
-  .info-table td:last-child { padding: 10px 14px; color: var(--text); background: var(--card); }
-  .info-table tr:hover td:last-child { background: var(--surface); }
-  .badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: var(--radius); background: #E6F1FB; color: var(--blue4); margin: 4px 4px 0 0; }
+  .card{background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:16px}
+  .card h3{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
+  .card p{font-size:11px;color:var(--muted);margin-bottom:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .chart-wrap{position:relative}
 
-  /* KPI cards */
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
-  .kpi-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; border: 0.5px solid var(--border); }
-  .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
-  .kpi-val { font-size: 22px; font-weight: 500; color: var(--text); line-height: 1.1; }
-  .kpi-unit { font-size: 12px; color: var(--text2); margin-left: 2px; }
-  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .info-table{width:100%;border-collapse:collapse;font-size:13px}
+  .info-table tr{border-bottom:0.5px solid var(--border)}
+  .info-table td:first-child{padding:10px 14px;font-weight:500;color:#E6F1FB;background:#1a3a5c;width:34%;vertical-align:top}
+  .info-table td:last-child{padding:10px 14px;color:var(--text);background:var(--card)}
+  .info-table tr:hover td:last-child{background:var(--surface)}
+  .badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:var(--radius);background:#E6F1FB;color:var(--blue4);margin:4px 4px 0 0}
 
-  /* Bar profile */
-  .bp-wrap { margin-top: 6px; }
-  .bp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .bp-label { font-size: 11px; color: var(--text2); width: 96px; flex-shrink: 0; }
-  .bp-track { flex: 1; height: 10px; background: var(--surface); border-radius: 4px; overflow: hidden; }
-  .bp-fill { height: 100%; border-radius: 4px; background: var(--blue4); }
-  .bp-pct { font-size: 11px; color: var(--text2); width: 38px; text-align: right; }
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .kpi-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;border:0.5px solid var(--border)}
+  .kpi-label{font-size:11px;color:var(--muted);margin-bottom:6px}
+  .kpi-val{font-size:22px;font-weight:500;color:var(--text);line-height:1.1}
+  .kpi-unit{font-size:12px;color:var(--text2);margin-left:2px}
+  .kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
 
-  /* Debt table */
-  .debt-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-  .debt-tbl tr { border-bottom: 0.5px solid var(--border); }
-  .debt-tbl td { padding: 8px 4px; color: var(--text2); }
-  .debt-tbl td:last-child { font-weight: 500; color: var(--text); text-align: right; }
+  .bp-wrap{margin-top:6px}
+  .bp-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .bp-label{font-size:11px;color:var(--text2);width:96px;flex-shrink:0}
+  .bp-track{flex:1;height:10px;background:var(--surface);border-radius:4px;overflow:hidden}
+  .bp-fill{height:100%;border-radius:4px;background:var(--blue4)}
+  .bp-pct{font-size:11px;color:var(--text2);width:38px;text-align:right}
 
-  /* Dist info */
-  .dist-info { background: var(--surface); border-radius: var(--radius); padding: 10px; font-size: 12px; margin-top: 10px; }
-  .dist-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 0.5px solid var(--border); }
-  .dist-row:last-child { border: none; }
-  .dist-row span:first-child { color: var(--muted); }
-  .dist-row span:last-child { font-weight: 500; color: var(--text); }
+  .debt-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+  .debt-tbl tr{border-bottom:0.5px solid var(--border)}
+  .debt-tbl td{padding:8px 4px;color:var(--text2)}
+  .debt-tbl td:last-child{font-weight:500;color:var(--text);text-align:right}
 
-  /* Loading */
-  .loading { text-align: center; padding: 60px; color: var(--muted); font-size: 14px; }
+  .dist-info{background:var(--surface);border-radius:var(--radius);padding:10px;font-size:12px;margin-top:10px}
+  .dist-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border)}
+  .dist-row:last-child{border:none}
+  .dist-row span:first-child{color:var(--muted)}
+  .dist-row span:last-child{font-weight:500;color:var(--text)}
 
-  @media (max-width: 640px) { .grid2, .grid3 { grid-template-columns: 1fr; } .content { padding: 16px; } }
+  .loading{text-align:center;padding:60px;color:var(--muted);font-size:14px}
+
+  /* CSV modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff;border-radius:12px;padding:24px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto}
+  .modal h2{font-size:15px;font-weight:500;margin-bottom:4px}
+  .modal p{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .modal pre{background:var(--surface);border-radius:var(--radius);padding:12px;font-size:11px;overflow-x:auto;line-height:1.6;border:0.5px solid var(--border)}
+  .modal-footer{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}.content{padding:16px}.toolbar{padding:8px 16px}}
 </style>
 </head>
 <body>
@@ -94,10 +104,22 @@
     <h1>WHAIR IR Dashboard</h1>
     <p id="headerSub">WHA Industrial Leasehold REIT</p>
   </div>
-  <div class="quarter-selector">
-    <label>Quarter</label>
-    <select id="quarterSelect" onchange="switchQuarter()"></select>
+  <div class="header-right">
+    <div class="quarter-selector">
+      <label>Quarter</label>
+      <select id="quarterSelect" onchange="switchQuarter()"></select>
+    </div>
   </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <button class="btn btn-primary" onclick="document.getElementById('csvFileInput').click()">⬆ Upload CSV</button>
+  <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVUpload(event)">
+  <button class="btn" onclick="downloadTemplate()">⬇ Download CSV Template</button>
+  <button class="btn" onclick="downloadJSON()">⬇ Download data.json</button>
+  <button class="btn" onclick="showCSVGuide()">? CSV Format Guide</button>
+  <span class="upload-status" id="uploadStatus">Upload a CSV to add or update quarterly data</span>
 </div>
 
 <div class="nav">
@@ -109,25 +131,16 @@
 
 <div class="content">
   <div id="loadingMsg" class="loading">Loading dashboard data...</div>
-
-  <!-- PAGE 1 -->
-  <div class="page" id="p0">
-    <div class="section-label">Fund Overview</div>
-    <table class="info-table" id="infoTable"></table>
-  </div>
-
-  <!-- PAGE 2 -->
+  <div class="page" id="p0"><div class="section-label">Fund Overview</div><table class="info-table" id="infoTable"></table></div>
   <div class="page" id="p1">
     <div class="section-label">Portfolio Breakdown</div>
     <div class="grid2">
       <div class="card"><h3>NLA by Investment No.</h3><p>Net Leasable Area by investment round (Sq.m.)</p><div class="chart-wrap" style="height:200px"><canvas id="nlaInvChart"></canvas></div></div>
       <div class="card"><h3>NLA by Zone</h3><p>Net Leasable Area by geographic zone</p><div class="chart-wrap" style="height:200px"><canvas id="nlaZoneChart"></canvas></div></div>
       <div class="card"><h3>Investment Type</h3><p>Leasehold vs Freehold</p><div class="chart-wrap" style="height:200px"><canvas id="holdChart"></canvas></div></div>
-      <div class="card"><h3>Asset Type — RBF vs RBW</h3><p>Ready Built Factory vs Ready Built Warehouse (Sq.m.)</p><div class="chart-wrap" style="height:200px"><canvas id="assetTypeChart"></canvas></div></div>
+      <div class="card"><h3>Asset Type — RBF vs RBW</h3><p>Ready Built Factory vs Ready Built Warehouse</p><div class="chart-wrap" style="height:200px"><canvas id="assetTypeChart"></canvas></div></div>
     </div>
   </div>
-
-  <!-- PAGE 3 -->
   <div class="page" id="p2">
     <div class="section-label">Performance Highlights</div>
     <div class="kpi-grid" id="kpiGrid"></div>
@@ -140,12 +153,10 @@
       <div class="card"><h3>Tenant Mixed by Industry</h3><div class="chart-wrap" style="height:190px"><canvas id="tenantIndChart"></canvas></div></div>
     </div>
   </div>
-
-  <!-- PAGE 4 -->
   <div class="page" id="p3">
     <div class="section-label">Financial Highlights</div>
     <div class="grid2" style="margin-bottom:14px">
-      <div class="card"><h3>Total Income &amp; Net Investment Income</h3><p>Annual vs quarterly (Million Baht) — dashed line separates full-year from quarterly data</p><div class="chart-wrap" style="height:200px"><canvas id="incomeChart"></canvas></div></div>
+      <div class="card"><h3>Total Income &amp; Net Investment Income</h3><p>Annual vs quarterly (Million Baht)</p><div class="chart-wrap" style="height:200px"><canvas id="incomeChart"></canvas></div></div>
       <div class="card"><h3>Total Assets &amp; Net Assets Value</h3><p>Annual vs quarterly (Million Baht)</p><div class="chart-wrap" style="height:200px"><canvas id="assetChart"></canvas></div></div>
     </div>
     <div class="grid2">
@@ -155,27 +166,55 @@
   </div>
 </div>
 
+<!-- CSV Guide Modal -->
+<div class="modal-overlay" id="csvModal">
+  <div class="modal">
+    <h2>CSV Format Guide</h2>
+    <p>CSV ต้องมี header row ตามนี้ (row แรก) แล้วตามด้วยข้อมูลแต่ละ Quarter</p>
+    <pre id="csvGuideContent"></pre>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="downloadTemplate()">⬇ Download Template</button>
+      <button class="btn" onclick="document.getElementById('csvModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const B=['#E6F1FB','#B5D4F4','#85B7EB','#378ADD','#185FA5','#0C447C','#042C53'];
-const tm='#898781', gl='rgba(0,0,0,0.07)';
-let DATA={}, QUARTER={}, charts={};
+const tm='#898781',gl='rgba(0,0,0,0.07)';
+let DATA={},QUARTER={},charts={};
+
+const CSV_HEADERS=[
+  'quarter','as_of','occupancy_rate','occupancy_after_undertaking',
+  'total_revenue_mthb','total_expenses_mthb','net_profit_nii_mthb',
+  'dpu_thb','dpu_period','dpu_book_close','dpu_payment_date',
+  'wale_years','wale_incl_commit_years','total_nla_sqm','total_units',
+  'total_assets_mthb','nav_total_mthb','nav_per_unit_thb',
+  'total_debt_mthb','ltv_pct','avg_remaining_maturity_years'
+];
+
+const CSV_SAMPLE={
+  quarter:'2Q2026',as_of:'30 Jun 2026',occupancy_rate:94.5,occupancy_after_undertaking:94.5,
+  total_revenue_mthb:255,total_expenses_mthb:34,net_profit_nii_mthb:190,
+  dpu_thb:0.1450,dpu_period:'1 Apr – 30 Jun 2026',dpu_book_close:'26 Aug 2026',dpu_payment_date:'18 Sep 2026',
+  wale_years:1.5,wale_incl_commit_years:1.8,total_nla_sqm:468990,total_units:170,
+  total_assets_mthb:13900,nav_total_mthb:8800,nav_per_unit_thb:8.32,
+  total_debt_mthb:4782,ltv_pct:34.4,avg_remaining_maturity_years:1.43
+};
 
 // Dashed separator plugin
-const dashedPlugin={
-  id:'dashedSep',
-  afterDraw(chart){
-    const si=chart.config.options.sepIdx; if(si==null)return;
-    const {ctx,chartArea:{top,bottom},scales:{x}}=chart;
-    const xPx=(x.getPixelForValue(si)+x.getPixelForValue(si+1))/2;
-    ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle='rgba(100,100,90,0.5)';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(xPx,top);ctx.lineTo(xPx,bottom);ctx.stroke();ctx.restore();
-  }
-};
+const dashedPlugin={id:'dashedSep',afterDraw(chart){
+  const si=chart.config.options.sepIdx;if(si==null)return;
+  const{ctx,chartArea:{top,bottom},scales:{x}}=chart;
+  const xPx=(x.getPixelForValue(si)+x.getPixelForValue(si+1))/2;
+  ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle='rgba(100,100,90,0.5)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(xPx,top);ctx.lineTo(xPx,bottom);ctx.stroke();ctx.restore();
+}};
 Chart.register(dashedPlugin);
 
-// Load data.json
+// ── INIT ──
 async function init(){
-  try {
+  try{
     const r=await fetch('data.json');
     DATA=await r.json();
     document.getElementById('loadingMsg').style.display='none';
@@ -183,17 +222,17 @@ async function init(){
     buildPage1();
     buildPage2();
     document.querySelectorAll('.page')[0].classList.add('active');
-  } catch(e){
+  }catch(e){
     document.getElementById('loadingMsg').textContent='Error loading data.json — make sure the file is in the same folder as index.html';
   }
 }
 
 function buildQuarterSelector(){
   const sel=document.getElementById('quarterSelect');
+  sel.innerHTML='';
   DATA.quarterly.forEach((q,i)=>{
     const opt=document.createElement('option');
-    opt.value=i; opt.textContent=q.quarter;
-    sel.appendChild(opt);
+    opt.value=i;opt.textContent=q.quarter;sel.appendChild(opt);
   });
   sel.value=DATA.quarterly.length-1;
   QUARTER=DATA.quarterly[DATA.quarterly.length-1];
@@ -201,34 +240,187 @@ function buildQuarterSelector(){
 }
 
 function switchQuarter(){
-  const idx=document.getElementById('quarterSelect').value;
-  QUARTER=DATA.quarterly[idx];
+  QUARTER=DATA.quarterly[document.getElementById('quarterSelect').value];
   document.getElementById('headerSub').textContent=`WHA Industrial Leasehold REIT  ·  As of ${QUARTER.as_of}`;
-  // Rebuild dynamic pages
-  buildPage3();
-  buildPage4();
+  buildPage3();buildPage4();
 }
 
 function showPage(idx,btn){
   document.querySelectorAll('.page').forEach((p,i)=>p.classList.toggle('active',i===idx));
   document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  if(idx===2) buildPage3();
-  if(idx===3) buildPage4();
+  if(idx===2)buildPage3();
+  if(idx===3)buildPage4();
 }
 
-function destroyChart(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 function donut(id,labels,data,colors){
   destroyChart(id);
   charts[id]=new Chart(document.getElementById(id),{
     type:'doughnut',
     data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},color:tm,boxWidth:10,padding:6}}}}
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:10},color:tm,boxWidth:10,padding:6}}}}
   });
 }
 
-// PAGE 1
+// ── CSV UPLOAD ──
+function handleCSVUpload(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const status=document.getElementById('uploadStatus');
+  status.className='upload-status';
+  status.textContent='Processing...';
+
+  Papa.parse(file,{
+    header:true,skipEmptyLines:true,
+    complete(results){
+      try{
+        const rows=results.data;
+        if(!rows.length){throw new Error('CSV is empty');}
+
+        let added=0,updated=0;
+        rows.forEach(row=>{
+          const q=row.quarter?.trim();
+          if(!q)return;
+
+          // Build quarterly object from CSV row
+          const obj={
+            quarter:q,
+            as_of:row.as_of||'',
+            occupancy_rate:parseFloat(row.occupancy_rate)||0,
+            occupancy_after_undertaking:parseFloat(row.occupancy_after_undertaking)||parseFloat(row.occupancy_rate)||0,
+            total_revenue_mthb:parseFloat(row.total_revenue_mthb)||0,
+            total_expenses_mthb:parseFloat(row.total_expenses_mthb)||0,
+            net_profit_nii_mthb:parseFloat(row.net_profit_nii_mthb)||0,
+            dpu_thb:parseFloat(row.dpu_thb)||0,
+            dpu_period:row.dpu_period||'',
+            dpu_book_close:row.dpu_book_close||'',
+            dpu_payment_date:row.dpu_payment_date||'',
+            wale_years:parseFloat(row.wale_years)||0,
+            wale_incl_commit_years:parseFloat(row.wale_incl_commit_years)||0,
+            total_nla_sqm:parseFloat(row.total_nla_sqm)||468990,
+            total_units:parseFloat(row.total_units)||170,
+            total_assets_mthb:parseFloat(row.total_assets_mthb)||0,
+            nav_total_mthb:parseFloat(row.nav_total_mthb)||0,
+            nav_per_unit_thb:parseFloat(row.nav_per_unit_thb)||0,
+            total_debt_mthb:parseFloat(row.total_debt_mthb)||0,
+            ltv_pct:parseFloat(row.ltv_pct)||0,
+            avg_remaining_maturity_years:parseFloat(row.avg_remaining_maturity_years)||0,
+          };
+
+          // Keep existing nested data (tenant, lease expiry, etc.) if not in CSV
+          const existing=DATA.quarterly.find(x=>x.quarter===q);
+          if(existing){
+            // Merge — keep nested arrays from existing unless CSV has them
+            obj.tenant_nationality=existing.tenant_nationality||[];
+            obj.tenant_industry=existing.tenant_industry||[];
+            obj.lease_expiry=existing.lease_expiry||[];
+            obj.occupancy_trend=existing.occupancy_trend||{};
+            obj.distribution_history=existing.distribution_history||[];
+            obj.loan_repayment=existing.loan_repayment||[];
+            const idx=DATA.quarterly.indexOf(existing);
+            DATA.quarterly[idx]=obj;
+            updated++;
+          } else {
+            // New quarter — copy nested arrays from latest quarter as baseline
+            const latest=DATA.quarterly[DATA.quarterly.length-1];
+            obj.tenant_nationality=JSON.parse(JSON.stringify(latest.tenant_nationality||[]));
+            obj.tenant_industry=JSON.parse(JSON.stringify(latest.tenant_industry||[]));
+            obj.lease_expiry=JSON.parse(JSON.stringify(latest.lease_expiry||[]));
+            obj.occupancy_trend=JSON.parse(JSON.stringify(latest.occupancy_trend||{}));
+            obj.distribution_history=JSON.parse(JSON.stringify(latest.distribution_history||[]));
+            obj.loan_repayment=JSON.parse(JSON.stringify(latest.loan_repayment||[]));
+            // Append new DPU to distribution history
+            if(obj.dpu_thb>0){
+              const qNum=q.match(/^(\d)Q(\d{4})$/);
+              if(qNum){
+                const qn=parseInt(qNum[1]),yr=q.replace(/^\dQ/,'');
+                const dh=obj.distribution_history;
+                let yEntry=dh.find(x=>x.year===yr);
+                if(!yEntry){yEntry={year:yr,q1:null,q2:null,q3:null,q4:null};dh.push(yEntry);}
+                yEntry[`q${qn}`]=obj.dpu_thb;
+              }
+            }
+            DATA.quarterly.push(obj);
+            added++;
+          }
+        });
+
+        buildQuarterSelector();
+        // Refresh current active page
+        const activeIdx=[...document.querySelectorAll('.page')].findIndex(p=>p.classList.contains('active'));
+        if(activeIdx===2)buildPage3();
+        if(activeIdx===3)buildPage4();
+
+        status.className='upload-status ok';
+        status.textContent=`✓ Upload successful — ${added} quarter(s) added, ${updated} updated. Click "Download data.json" to save for GitHub.`;
+        e.target.value='';
+      }catch(err){
+        status.className='upload-status err';
+        status.textContent=`✗ Error: ${err.message}`;
+      }
+    },
+    error(err){
+      document.getElementById('uploadStatus').className='upload-status err';
+      document.getElementById('uploadStatus').textContent=`✗ Parse error: ${err.message}`;
+    }
+  });
+}
+
+// ── DOWNLOAD TEMPLATE ──
+function downloadTemplate(){
+  const header=CSV_HEADERS.join(',');
+  const sample=CSV_HEADERS.map(h=>{
+    const v=CSV_SAMPLE[h]??'';
+    return String(v).includes(',')?`"${v}"`:v;
+  }).join(',');
+  const csv=`${header}\n${sample}\n`;
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='whair_quarterly_template.csv';
+  a.click();
+}
+
+// ── DOWNLOAD JSON ──
+function downloadJSON(){
+  const json=JSON.stringify(DATA,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='data.json';
+  a.click();
+  document.getElementById('uploadStatus').textContent='data.json downloaded — upload this file to your GitHub repo to update the live dashboard.';
+  document.getElementById('uploadStatus').className='upload-status ok';
+}
+
+// ── CSV GUIDE MODAL ──
+function showCSVGuide(){
+  const lines=[
+    'Required columns (row 1 = header):',
+    '',
+    ...CSV_HEADERS.map(h=>`  ${h}`),
+    '',
+    'Example row:',
+    '  '+CSV_HEADERS.map(h=>{
+      const v=CSV_SAMPLE[h]??'';
+      return String(v).includes(',')?`"${v}"`:v;
+    }).join(', '),
+    '',
+    'Notes:',
+    '  - quarter format: 1Q2026, 2Q2026, 3Q2026, 4Q2026',
+    '  - Nested data (tenant mix, lease expiry) is kept from',
+    '    existing quarter if not provided in CSV',
+    '  - After upload → click "Download data.json"',
+    '    → upload to GitHub to update live dashboard'
+  ];
+  document.getElementById('csvGuideContent').textContent=lines.join('\n');
+  document.getElementById('csvModal').classList.add('open');
+}
+
+// ── PAGE 1 ──
 function buildPage1(){
   const f=DATA.fund_info;
   document.getElementById('infoTable').innerHTML=`
@@ -241,37 +433,33 @@ function buildPage1(){
     <tr><td>Investment Type</td><td>${f.investment_type}<br><span class="badge">Leasehold 100%</span><span class="badge">Freehold 0%</span></td></tr>
     <tr><td>Avg. Remaining Leasehold Life</td><td>${f.avg_remaining_leasehold}</td></tr>
     <tr><td>Investment Assets</td><td>${f.investment_assets}</td></tr>
-    <tr><td>Total Buildings</td><td><strong>${f.total_units} Units</strong> &nbsp;·&nbsp; NLA ${f.total_nla_sqm.toLocaleString()} Sq.m. (100%)<br><span style="font-size:12px;color:#666">Ready Built Factory: ${f.rbf_units} units · ${f.rbf_nla_sqm.toLocaleString()} Sq.m. (${f.rbf_pct}%)<br>Ready Built Warehouse: ${f.rbw_units} units · ${f.rbw_nla_sqm.toLocaleString()} Sq.m. (${f.rbw_pct}%)</span></td></tr>
+    <tr><td>Total Buildings</td><td><strong>${f.total_units} Units</strong> · NLA ${f.total_nla_sqm.toLocaleString()} Sq.m. (100%)<br><span style="font-size:12px;color:#666">Ready Built Factory: ${f.rbf_units} units · ${f.rbf_nla_sqm.toLocaleString()} Sq.m. (${f.rbf_pct}%)<br>Ready Built Warehouse: ${f.rbw_units} units · ${f.rbw_nla_sqm.toLocaleString()} Sq.m. (${f.rbw_pct}%)</span></td></tr>
     <tr><td>Total Roof Top Area for Rent</td><td>${f.rooftop_sqm.toLocaleString()} Sq.m.</td></tr>
     <tr><td>Total Asset Size</td><td><strong>${f.total_asset_size_mthb.toLocaleString()} Million Baht</strong> (as of ${f.total_asset_as_of})</td></tr>
-    <tr><td>Additional Investments</td><td>${f.additional_investments} · Latest: ${f.latest_investment}</td></tr>
-  `;
+    <tr><td>Additional Investments</td><td>${f.additional_investments} · Latest: ${f.latest_investment}</td></tr>`;
 }
 
-// PAGE 2
+// ── PAGE 2 ──
 function buildPage2(){
-  const p=DATA.portfolio;
+  const p=DATA.portfolio,f=DATA.fund_info;
   donut('nlaInvChart',p.nla_by_investment.map(x=>x.label),p.nla_by_investment.map(x=>x.value),[B[6],B[5],B[4],B[3],B[2],B[1]]);
   donut('nlaZoneChart',p.nla_by_zone.map(x=>x.label),p.nla_by_zone.map(x=>x.value),[B[5],B[3],B[1]]);
   donut('holdChart',['Leasehold 100%','Freehold 0%'],[100,0.001],[B[4],'#e0dfd8']);
-  const f=DATA.fund_info;
   donut('assetTypeChart',[`Ready Built Factory (RBF) — ${f.rbf_nla_sqm.toLocaleString()} Sq.m.`,`Ready Built Warehouse (RBW) — ${f.rbw_nla_sqm.toLocaleString()} Sq.m.`],[f.rbf_pct,f.rbw_pct],[B[5],B[2]]);
 }
 
-// PAGE 3
+// ── PAGE 3 ──
 function buildPage3(){
   const q=QUARTER;
-  // KPI
   document.getElementById('kpiGrid').innerHTML=[
-    {l:'Occupancy Rate',v:`${q.occupancy_rate}`,u:'%',s:`After undertaking: ${q.occupancy_after_undertaking}%`},
-    {l:'Total Revenue',v:`${q.total_revenue_mthb}`,u:'M THB',s:`Expenses: ${q.total_expenses_mthb}M THB`},
-    {l:'Net Profit (NII)',v:`${q.net_profit_nii_mthb}`,u:'M THB',s:'Net Investment Income'},
-    {l:'Distribution per Unit',v:`${q.dpu_thb}`,u:'THB',s:`Paid: ${q.dpu_payment_date}`},
-    {l:'W.A.L.E.',v:`${q.wale_incl_commit_years}`,u:'yrs',s:'incl. Commit to Renew'},
-    {l:'Total NLA',v:`${q.total_nla_sqm.toLocaleString()}`,u:'Sq.m.',s:`${q.total_units} units`},
+    {l:'Occupancy Rate',v:q.occupancy_rate,u:'%',s:`After undertaking: ${q.occupancy_after_undertaking}%`},
+    {l:'Total Revenue',v:q.total_revenue_mthb,u:'M THB',s:`Expenses: ${q.total_expenses_mthb}M THB`},
+    {l:'Net Profit (NII)',v:q.net_profit_nii_mthb,u:'M THB',s:'Net Investment Income'},
+    {l:'Distribution per Unit',v:q.dpu_thb,u:'THB',s:`Paid: ${q.dpu_payment_date}`},
+    {l:'W.A.L.E.',v:q.wale_incl_commit_years,u:'yrs',s:'incl. Commit to Renew'},
+    {l:'Total NLA',v:q.total_nla_sqm.toLocaleString(),u:'Sq.m.',s:`${q.total_units} units`},
   ].map(k=>`<div class="kpi-card"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}<span class="kpi-unit">${k.u}</span></div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
-  // Occ trend
   destroyChart('occChart');
   const ot=q.occupancy_trend;
   charts['occChart']=new Chart(document.getElementById('occChart'),{type:'line',data:{labels:ot.labels,datasets:[
@@ -279,51 +467,37 @@ function buildPage3(){
     {label:'After undertaking',data:ot.after,borderColor:B[3],backgroundColor:'transparent',borderWidth:2,pointRadius:3,borderDash:[4,3],tension:0.3}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{ticks:{color:tm,font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{color:tm,font:{size:10},callback:v=>v+'%'},min:60,max:100,grid:{color:gl}}}}});
 
-  // Lease expiry
   const maxLe=Math.max(...q.lease_expiry.map(x=>x.pct));
   document.getElementById('leaseExpiry').innerHTML=q.lease_expiry.map(x=>`
-    <div class="bp-row">
-      <span class="bp-label">${x.label}</span>
-      <div class="bp-track"><div class="bp-fill" style="width:${(x.pct/maxLe*100).toFixed(1)}%"></div></div>
-      <span class="bp-pct">${x.pct}%</span>
-    </div>`).join('');
+    <div class="bp-row"><span class="bp-label">${x.label}</span>
+    <div class="bp-track"><div class="bp-fill" style="width:${(x.pct/maxLe*100).toFixed(1)}%"></div></div>
+    <span class="bp-pct">${x.pct}%</span></div>`).join('');
 
-  // Tenant charts
   donut('tenantNatChart',q.tenant_nationality.map(x=>`${x.label} ${x.pct}%`),q.tenant_nationality.map(x=>x.pct),[B[6],B[5],B[4],B[3],B[2],B[1]]);
   donut('tenantIndChart',q.tenant_industry.map(x=>`${x.label} ${x.pct}%`),q.tenant_industry.map(x=>x.pct),[B[6],B[5],B[4],B[3],B[2],B[1]]);
 }
 
-// PAGE 4
+// ── PAGE 4 ──
 function buildPage4(){
-  const q=QUARTER;
-  const ann=DATA.annual;
-
-  // Build combined labels: annual years + quarterly labels from quarterly[]
+  const q=QUARTER,ann=DATA.annual;
   const annLabels=ann.map(a=>a.year);
   const qLabels=DATA.quarterly.map(x=>x.quarter);
   const allLabels=[...annLabels,...qLabels];
   const SEP=annLabels.length-1;
-
-  const tiData=[...ann.map(a=>a.total_income),...DATA.quarterly.map(x=>x.total_revenue_mthb)];
-  const niiData=[...ann.map(a=>a.nii),...DATA.quarterly.map(x=>x.net_profit_nii_mthb)];
-  const taData=[...ann.map(a=>a.total_assets),...DATA.quarterly.map(x=>x.total_assets_mthb)];
-  const navData=[...ann.map(a=>a.nav),...DATA.quarterly.map(x=>x.nav_total_mthb)];
-
-  const barColor=(i,dark,light)=>i<=SEP?dark:light;
+  const bc=(i,d,l)=>i<=SEP?d:l;
 
   destroyChart('incomeChart');
   charts['incomeChart']=new Chart(document.getElementById('incomeChart'),{type:'bar',data:{labels:allLabels,datasets:[
-    {label:'Total Income',data:tiData,backgroundColor:allLabels.map((_,i)=>barColor(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
-    {label:'Net Investment Income',data:niiData,backgroundColor:allLabels.map((_,i)=>barColor(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
+    {label:'Total Income',data:[...ann.map(a=>a.total_income),...DATA.quarterly.map(x=>x.total_revenue_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
+    {label:'Net Investment Income',data:[...ann.map(a=>a.nii),...DATA.quarterly.map(x=>x.net_profit_nii_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
   ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:SEP,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{ticks:{color:tm,font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{color:tm,font:{size:10}},grid:{color:gl}}}}});
 
   destroyChart('assetChart');
   charts['assetChart']=new Chart(document.getElementById('assetChart'),{type:'bar',data:{labels:allLabels,datasets:[
-    {label:'Total Assets',data:taData,backgroundColor:allLabels.map((_,i)=>barColor(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
-    {label:'Net Assets Value',data:navData,backgroundColor:allLabels.map((_,i)=>barColor(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
+    {label:'Total Assets',data:[...ann.map(a=>a.total_assets),...DATA.quarterly.map(x=>x.total_assets_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[5],B[3])),borderRadius:3,borderSkipped:false},
+    {label:'Net Assets Value',data:[...ann.map(a=>a.nav),...DATA.quarterly.map(x=>x.nav_total_mthb)],backgroundColor:allLabels.map((_,i)=>bc(i,B[2],B[1])),borderRadius:3,borderSkipped:false}
   ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:SEP,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{ticks:{color:tm,font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{color:tm,font:{size:10},callback:v=>(v/1000).toFixed(0)+'k'},grid:{color:gl}}}}});
 
-  // Loan
   destroyChart('loanChart');
   charts['loanChart']=new Chart(document.getElementById('loanChart'),{type:'bar',data:{labels:q.loan_repayment.map(x=>x.year),datasets:[
     {label:'Existing Loan',data:q.loan_repayment.map(x=>x.existing),backgroundColor:B[4],borderRadius:3,borderSkipped:false},
@@ -335,16 +509,14 @@ function buildPage4(){
     <tr><td>Loan to Value Ratio</td><td>${q.ltv_pct}%</td></tr>
     <tr><td>Avg. Remaining Maturity</td><td>${q.avg_remaining_maturity_years} years</td></tr>`;
 
-  // Distribution
   const dh=q.distribution_history;
-  const dhLabels=dh.map(x=>x.year);
   const DSEP=dh.filter(x=>x.q2!==null).length-1;
   destroyChart('distChart');
-  charts['distChart']=new Chart(document.getElementById('distChart'),{type:'bar',data:{labels:dhLabels,datasets:[
-    {label:'Q1',data:dh.map(x=>x.q1),backgroundColor:dhLabels.map((_,i)=>i<=DSEP?B[6]:B[4]),borderSkipped:false},
-    {label:'Q2',data:dh.map(x=>x.q2),backgroundColor:dhLabels.map((_,i)=>i<=DSEP?B[5]:B[3]),borderSkipped:false},
-    {label:'Q3',data:dh.map(x=>x.q3),backgroundColor:dhLabels.map((_,i)=>i<=DSEP?B[3]:B[2]),borderSkipped:false},
-    {label:'Q4',data:dh.map(x=>x.q4),backgroundColor:dhLabels.map((_,i)=>i<=DSEP?B[1]:B[0]),borderSkipped:false}
+  charts['distChart']=new Chart(document.getElementById('distChart'),{type:'bar',data:{labels:dh.map(x=>x.year),datasets:[
+    {label:'Q1',data:dh.map(x=>x.q1),backgroundColor:dh.map((_,i)=>i<=DSEP?B[6]:B[4]),borderSkipped:false},
+    {label:'Q2',data:dh.map(x=>x.q2),backgroundColor:dh.map((_,i)=>i<=DSEP?B[5]:B[3]),borderSkipped:false},
+    {label:'Q3',data:dh.map(x=>x.q3),backgroundColor:dh.map((_,i)=>i<=DSEP?B[3]:B[2]),borderSkipped:false},
+    {label:'Q4',data:dh.map(x=>x.q4),backgroundColor:dh.map((_,i)=>i<=DSEP?B[1]:B[0]),borderSkipped:false}
   ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:DSEP,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{stacked:true,ticks:{color:tm,font:{size:10}}},y:{stacked:true,ticks:{color:tm,font:{size:10},callback:v=>v?v.toFixed(2):''},grid:{color:gl}}}}});
 
   document.getElementById('distInfo').innerHTML=`
