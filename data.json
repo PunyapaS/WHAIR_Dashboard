@@ -1,0 +1,154 @@
+{
+  "_readme": "WHAIR IR Dashboard Data File — แก้ไขตัวเลขในไฟล์นี้เพื่ออัปเดต Dashboard",
+  "_instructions": {
+    "add_quarter": "เพิ่ม object ใหม่ใน quarterly[] โดย copy format จาก quarter ล่าสุด",
+    "update_annual": "แก้ตัวเลขใน annual[] สำหรับข้อมูลรายปี",
+    "separator": "dashedSepIndex ใน quarterly คือ index ที่เส้นประจะวาดหลังจาก (นับจาก 0)"
+  },
+
+  "fund_info": {
+    "name": "WHA Industrial Leasehold Real Estate Investment Trust (WHAIR)",
+    "inception_date": "21 November 2016",
+    "listed_date": "28 November 2016",
+    "reit_manager": "WHA Industrial REIT Management Co., Ltd.",
+    "trustee": "SCB Asset Management Company Limited",
+    "property_manager": "WHA Industrial Development Public Company Limited",
+    "investment_type": "100% Leasehold (30+30 years)",
+    "avg_remaining_leasehold": "52.6 years",
+    "investment_assets": "Ready Built Factory (RBF) & Ready Built Warehouse (RBW)",
+    "total_units": 170,
+    "total_nla_sqm": 468990,
+    "rbf_units": 136,
+    "rbf_nla_sqm": 318586,
+    "rbf_pct": 68,
+    "rbw_units": 34,
+    "rbw_nla_sqm": 150404,
+    "rbw_pct": 32,
+    "rooftop_sqm": 179648,
+    "total_asset_size_mthb": 13883,
+    "total_asset_as_of": "31 Mar 2026",
+    "additional_investments": "6 rounds (IR1–IR6)",
+    "latest_investment": "4 Dec 2024 (IR6)"
+  },
+
+  "portfolio": {
+    "nla_by_investment": [
+      { "label": "IR1 — 261,458 Sq.m.", "value": 56 },
+      { "label": "IR2 — 55,131 Sq.m.",  "value": 12 },
+      { "label": "IR3 — 15,916 Sq.m.",  "value": 3  },
+      { "label": "IR4 — 48,127 Sq.m.",  "value": 10 },
+      { "label": "IR5 — 48,186 Sq.m.",  "value": 10 },
+      { "label": "IR6 — 40,172 Sq.m.",  "value": 9  }
+    ],
+    "nla_by_zone": [
+      { "label": "Rayong & Chonburi (EEC) 91.8%", "value": 91.8 },
+      { "label": "Saraburi 8.0%",                  "value": 8.0  },
+      { "label": "Prachinburi 0.2%",               "value": 0.2  }
+    ]
+  },
+
+  "annual": [
+    { "year": "2016", "total_income": 62,   "nii": 44,  "total_assets": 8201,  "nav": 5738 },
+    { "year": "2017", "total_income": 577,  "nii": 425, "total_assets": 8434,  "nav": 5985 },
+    { "year": "2018", "total_income": 726,  "nii": 527, "total_assets": 9691,  "nav": 6181 },
+    { "year": "2019", "total_income": 788,  "nii": 544, "total_assets": 9914,  "nav": 6384 },
+    { "year": "2020", "total_income": 686,  "nii": 467, "total_assets": 11489, "nav": 7410 },
+    { "year": "2021", "total_income": 764,  "nii": 585, "total_assets": 11771, "nav": 7792 },
+    { "year": "2022", "total_income": 747,  "nii": 515, "total_assets": 13321, "nav": 8575 },
+    { "year": "2023", "total_income": 872,  "nii": 581, "total_assets": 13109, "nav": 8475 },
+    { "year": "2024", "total_income": 913,  "nii": 583, "total_assets": 14041, "nav": 8868 },
+    { "year": "2025", "total_income": 1017, "nii": 688, "total_assets": 13899, "nav": 8799 }
+  ],
+
+  "quarterly": [
+    {
+      "quarter": "1Q2026",
+      "as_of": "31 Mar 2026",
+      "occupancy_rate": 94.4,
+      "occupancy_after_undertaking": 94.4,
+      "total_revenue_mthb": 250,
+      "total_expenses_mthb": 33,
+      "net_profit_nii_mthb": 188,
+      "dpu_thb": 0.1434,
+      "dpu_period": "1 Jan – 31 Mar 2026",
+      "dpu_book_close": "26 May 2026",
+      "dpu_payment_date": "18 Jun 2026",
+      "wale_years": 1.6,
+      "wale_incl_commit_years": 1.9,
+      "total_nla_sqm": 468990,
+      "total_units": 170,
+      "total_assets_mthb": 13883,
+      "nav_total_mthb": 8792,
+      "nav_per_unit_thb": 8.3034,
+      "total_debt_mthb": 4782,
+      "ltv_pct": 34.44,
+      "avg_remaining_maturity_years": 1.68,
+      "tenant_nationality": [
+        { "label": "China",     "pct": 34.6 },
+        { "label": "EU",        "pct": 23.8 },
+        { "label": "Asia",      "pct": 19.3 },
+        { "label": "Japan",     "pct": 9.4  },
+        { "label": "USA",       "pct": 8.3  },
+        { "label": "Australia", "pct": 4.6  }
+      ],
+      "tenant_industry": [
+        { "label": "Auto & Parts", "pct": 32.3 },
+        { "label": "Consumer",     "pct": 23.3 },
+        { "label": "Logistic",     "pct": 13.8 },
+        { "label": "Electronic",   "pct": 13.0 },
+        { "label": "Others",       "pct": 12.6 },
+        { "label": "Packaging",    "pct": 5.0  }
+      ],
+      "lease_expiry": [
+        { "label": "2026 (Q2–Q4)", "pct": 26.4 },
+        { "label": "2027",         "pct": 27.1 },
+        { "label": "2028",         "pct": 32.9 },
+        { "label": "After 2028",   "pct": 13.6 }
+      ],
+      "occupancy_trend": {
+        "labels": ["2016","2017","2018","2019","2020","2021","2022","2023","2024","2025","1Q26"],
+        "before": [84.4,68.4,80.8,90.7,91.3,93.0,95.1,94.5,94.5,94.5,94.4],
+        "after":  [94.5,94.5,94.5,91.1,92.2,94.4,97.3,94.5,94.5,94.5,94.4]
+      },
+      "distribution_history": [
+        { "year": "2020", "q1": 0.1715, "q2": 0.1715, "q3": 0.1715, "q4": 0.1718 },
+        { "year": "2021", "q1": 0.1738, "q2": 0.1738, "q3": 0.1738, "q4": 0.1738 },
+        { "year": "2022", "q1": 0.1556, "q2": 0.1556, "q3": 0.1556, "q4": 0.1556 },
+        { "year": "2023", "q1": 0.1369, "q2": 0.1369, "q3": 0.1369, "q4": 0.1369 },
+        { "year": "2024", "q1": 0.1372, "q2": 0.2229, "q3": 0.0582, "q4": 0.1372 },
+        { "year": "2025", "q1": 0.1325, "q2": 0.1325, "q3": 0.1755, "q4": 0.1325 },
+        { "year": "1Q26", "q1": 0.1434, "q2": null,   "q3": null,   "q4": null   }
+      ],
+      "loan_repayment": [
+        { "year": "2026", "existing": 1500, "refinance": 0   },
+        { "year": "2027", "existing": 1775, "refinance": 0   },
+        { "year": "2028", "existing": 885,  "refinance": 622 }
+      ]
+    }
+  ],
+
+  "_add_quarter_template": {
+    "_note": "Copy ด้านล่างนี้แล้ว paste ต่อท้าย quarterly[] เพื่อเพิ่ม Quarter ใหม่",
+    "quarter": "2Q2026",
+    "as_of": "30 Jun 2026",
+    "occupancy_rate": 0,
+    "occupancy_after_undertaking": 0,
+    "total_revenue_mthb": 0,
+    "total_expenses_mthb": 0,
+    "net_profit_nii_mthb": 0,
+    "dpu_thb": 0,
+    "dpu_period": "1 Apr – 30 Jun 2026",
+    "dpu_book_close": "",
+    "dpu_payment_date": "",
+    "wale_years": 0,
+    "wale_incl_commit_years": 0,
+    "total_nla_sqm": 468990,
+    "total_units": 170,
+    "total_assets_mthb": 0,
+    "nav_total_mthb": 0,
+    "nav_per_unit_thb": 0,
+    "total_debt_mthb": 0,
+    "ltv_pct": 0,
+    "avg_remaining_maturity_years": 0
+  }
+}
