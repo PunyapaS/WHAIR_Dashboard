@@ -569,21 +569,47 @@ function buildChartSeries(selectedQ, annualArr, quarterlyArr, getAnnualVal, getQ
 // ── PAGE 3 ──
 function buildPage3(){
   const q=QUARTER;
+  const sel=parseQ(q.quarter);
   document.getElementById('kpiGrid').innerHTML=[
     {l:'Occupancy Rate',v:q.occupancy_rate,u:'%',s:`After undertaking: ${q.occupancy_after_undertaking}%`},
     {l:'Total Revenue',v:q.total_revenue_mthb,u:'M THB',s:`Expenses: ${q.total_expenses_mthb}M THB`},
     {l:'Net Profit (NII)',v:q.net_profit_nii_mthb,u:'M THB',s:'Net Investment Income'},
-    {l:'Distribution per Unit',v:q.dpu_thb,u:'THB',s:`Paid: ${q.dpu_payment_date}`},
+    {l:'Distribution per Unit',v:parseFloat(q.dpu_thb).toFixed(4),u:'THB',s:`Paid: ${q.dpu_payment_date}`},
     {l:'W.A.L.E.',v:q.wale_incl_commit_years,u:'yrs',s:'incl. Commit to Renew'},
     {l:'Total NLA',v:q.total_nla_sqm.toLocaleString(),u:'Sq.m.',s:`${q.total_units} units`},
   ].map(k=>`<div class="kpi-card"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}<span class="kpi-unit">${k.u}</span></div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
-  // Occupancy trend — show only up to selected quarter's data points
+  // ── Occupancy Trend: smart annual/quarterly collapse ──
+  // Prior years (before selected year): use annual average from occupancy_trend in latest Q
+  // Current year: show individual quarters
   destroyChart('occChart');
+
+  // Build occupancy data smartly from all quarterly data
+  const selectedIdx=DATA.quarterly.indexOf(q);
+  const visibleQs=DATA.quarterly.slice(0,selectedIdx+1);
+
+  // Get the full occupancy_trend from selected quarter (has annual data baked in)
   const ot=q.occupancy_trend;
-  charts['occChart']=new Chart(document.getElementById('occChart'),{type:'line',data:{labels:ot.labels,datasets:[
-    {label:'Before undertaking',data:ot.before,borderColor:B[5],backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:0.3},
-    {label:'After undertaking',data:ot.after,borderColor:B[3],backgroundColor:'transparent',borderWidth:2,pointRadius:3,borderDash:[4,3],tension:0.3}
+
+  // For prior years: use annual labels from occupancy_trend (2016..2024 etc)
+  // For current year: replace with individual Q labels
+  const priorLabels=ot.labels.filter(l=>!/Q/.test(l)&&parseInt(l)<sel.yr);
+  const priorBefore=priorLabels.map(l=>{const i=ot.labels.indexOf(l);return ot.before[i];});
+  const priorAfter=priorLabels.map(l=>{const i=ot.labels.indexOf(l);return ot.after[i];});
+
+  // Current year Qs up to selected
+  const curQs=visibleQs.filter(x=>{const p=parseQ(x.quarter);return p&&p.yr===sel.yr;});
+  const curLabels=curQs.map(x=>x.quarter);
+  const curBefore=curQs.map(x=>x.occupancy_rate);
+  const curAfter=curQs.map(x=>x.occupancy_after_undertaking);
+
+  const occLabels=[...priorLabels,...curLabels];
+  const occBefore=[...priorBefore,...curBefore];
+  const occAfter=[...priorAfter,...curAfter];
+
+  charts['occChart']=new Chart(document.getElementById('occChart'),{type:'line',data:{labels:occLabels,datasets:[
+    {label:'Before undertaking',data:occBefore,borderColor:B[5],backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:0.3},
+    {label:'After undertaking', data:occAfter, borderColor:B[3],backgroundColor:'transparent',borderWidth:2,pointRadius:3,borderDash:[4,3],tension:0.3}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{ticks:{color:tm,font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{color:tm,font:{size:10},callback:v=>v+'%'},min:60,max:100,grid:{color:gl}}}}});
 
   const maxLe=Math.max(...q.lease_expiry.map(x=>x.pct));
