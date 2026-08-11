@@ -58,7 +58,7 @@
       },
       {
         "label": "Saraburi 8.0%",
-        "value": 8.0
+        "value": 8
       },
       {
         "label": "Prachinburi 0.2%",
@@ -190,7 +190,7 @@
       "tenant_industry": [
         {
           "label": "Auto & Parts",
-          "pct": 33.0
+          "pct": 33
         },
         {
           "label": "Consumer",
@@ -250,7 +250,7 @@
           80.8,
           90.7,
           91.3,
-          93.0,
+          93,
           95.1,
           94.5,
           95.1,
@@ -341,8 +341,8 @@
     {
       "quarter": "2Q2025",
       "as_of": "30 Jun 2025",
-      "occupancy_rate": 97.0,
-      "occupancy_after_undertaking": 98.0,
+      "occupancy_rate": 97,
+      "occupancy_after_undertaking": 98,
       "total_revenue_mthb": 255,
       "total_expenses_mthb": 38,
       "net_profit_nii_mthb": 172,
@@ -450,12 +450,12 @@
           80.8,
           90.7,
           91.3,
-          93.0,
+          93,
           95.1,
           94.5,
           95.1,
           96.3,
-          97.0
+          97
         ],
         "after": [
           94.5,
@@ -468,7 +468,7 @@
           94.5,
           94.5,
           97.4,
-          98.0
+          98
         ]
       },
       "distribution_history": [
@@ -617,7 +617,7 @@
       "lease_expiry": [
         {
           "label": "2025 (Oct–Dec)",
-          "pct": 16.0
+          "pct": 16
         },
         {
           "label": "2026",
@@ -653,12 +653,12 @@
           80.8,
           90.7,
           91.3,
-          93.0,
+          93,
           95.1,
           94.5,
           95.1,
           96.3,
-          97.0,
+          97,
           96.2
         ],
         "after": [
@@ -672,7 +672,7 @@
           94.5,
           94.5,
           97.4,
-          98.0,
+          98,
           97.3
         ]
       },
@@ -758,7 +758,7 @@
       "dpu_book_close": "9 Mar 2026",
       "dpu_payment_date": "27 Mar 2026",
       "wale_years": 1.6,
-      "wale_incl_commit_years": 2.0,
+      "wale_incl_commit_years": 2,
       "total_nla_sqm": 468990,
       "total_units": 170,
       "total_assets_mthb": 13899,
@@ -816,7 +816,7 @@
         },
         {
           "label": "Packaging",
-          "pct": 5.0
+          "pct": 5
         }
       ],
       "lease_expiry": [
@@ -859,12 +859,12 @@
           80.8,
           90.7,
           91.3,
-          93.0,
+          93,
           95.1,
           94.5,
           95.1,
           96.3,
-          97.0,
+          97,
           96.2,
           94.5
         ],
@@ -879,7 +879,7 @@
           94.5,
           94.5,
           97.4,
-          98.0,
+          98,
           97.3,
           94.5
         ]
@@ -1011,7 +1011,7 @@
         },
         {
           "label": "Electronic",
-          "pct": 13.0
+          "pct": 13
         },
         {
           "label": "Others",
@@ -1019,7 +1019,7 @@
         },
         {
           "label": "Packaging",
-          "pct": 5.0
+          "pct": 5
         }
       ],
       "lease_expiry": [
@@ -1060,7 +1060,7 @@
           80.8,
           90.7,
           91.3,
-          93.0,
+          93,
           95.1,
           94.5,
           95.1,
@@ -1151,6 +1151,210 @@
       ],
       "avg_remaining_leasehold": "52.6 years",
       "total_asset_size_mthb": 13883
+    },
+    {
+      "quarter": "2Q2026",
+      "as_of": " 30 Jun 2026",
+      "occupancy_rate": 93.6,
+      "occupancy_after_undertaking": 93.6,
+      "total_revenue_mthb": 243,
+      "total_expenses_mthb": 38,
+      "net_profit_nii_mthb": 177,
+      "dpu_thb": 0.1434,
+      "dpu_period": "1 Apr – 30 Jun 2026",
+      "dpu_book_close": "28-Aug-26",
+      "dpu_payment_date": "23-Sep-26",
+      "wale_years": 1.6,
+      "wale_incl_commit_years": 1.9,
+      "total_nla_sqm": 468990,
+      "total_units": 170,
+      "total_assets_mthb": 13893,
+      "nav_total_mthb": 8811,
+      "nav_per_unit_thb": 8.32,
+      "total_debt_mthb": 4782,
+      "ltv_pct": 34.42,
+      "avg_remaining_maturity_years": 1.43,
+      "tenant_nationality": [
+        {
+          "label": "China",
+          "pct": 33.2
+        },
+        {
+          "label": "EU",
+          "pct": 23
+        },
+        {
+          "label": "Asia",
+          "pct": 20.2
+        },
+        {
+          "label": "Japan",
+          "pct": 9.4
+        },
+        {
+          "label": "USA",
+          "pct": 9.5
+        },
+        {
+          "label": "Australia",
+          "pct": 4.6
+        }
+      ],
+      "tenant_industry": [
+        {
+          "label": "Auto & Parts",
+          "pct": 30.6
+        },
+        {
+          "label": "Consumer",
+          "pct": 23.4
+        },
+        {
+          "label": "Logistic",
+          "pct": 13.8
+        },
+        {
+          "label": "Electronic",
+          "pct": 14.2
+        },
+        {
+          "label": "Others",
+          "pct": 13
+        },
+        {
+          "label": "Packaging",
+          "pct": 5
+        }
+      ],
+      "lease_expiry": [
+        {
+          "label": " 2026 (Q3-Q4)",
+          "pct": 20.9
+        },
+        {
+          "label": "2027",
+          "pct": 27.1
+        },
+        {
+          "label": "2028",
+          "pct": 33.8
+        },
+        {
+          "label": "After 2028",
+          "pct": 18.2
+        }
+      ],
+      "occupancy_trend": {
+        "labels": [
+          "2016",
+          "2017",
+          "2018",
+          "2019",
+          "2020",
+          "2021",
+          "2022",
+          "2023",
+          "2024",
+          "2025",
+          "2Q26"
+        ],
+        "before": [
+          84.4,
+          68.4,
+          80.8,
+          90.7,
+          91.3,
+          93,
+          95.1,
+          94.5,
+          95.1,
+          94.5,
+          93.6
+        ],
+        "after": [
+          94.5,
+          94.5,
+          94.5,
+          91.1,
+          92.2,
+          94.4,
+          97.3,
+          94.5,
+          94.5,
+          94.5,
+          93.6
+        ]
+      },
+      "distribution_history": [
+        {
+          "year": "2020",
+          "q1": 0.1715,
+          "q2": 0.1715,
+          "q3": 0.1715,
+          "q4": 0.1718
+        },
+        {
+          "year": "2021",
+          "q1": 0.1738,
+          "q2": 0.1738,
+          "q3": 0.1738,
+          "q4": 0.1738
+        },
+        {
+          "year": "2022",
+          "q1": 0.1556,
+          "q2": 0.1556,
+          "q3": 0.1556,
+          "q4": 0.1556
+        },
+        {
+          "year": "2023",
+          "q1": 0.1369,
+          "q2": 0.1369,
+          "q3": 0.1369,
+          "q4": 0.1369
+        },
+        {
+          "year": "2024",
+          "q1": 0.1372,
+          "q2": 0.2229,
+          "q3": 0.0582,
+          "q4": 0.1372
+        },
+        {
+          "year": "2025",
+          "q1": 0.1325,
+          "q2": 0.1325,
+          "q3": 0.1325,
+          "q4": 0.1755
+        },
+        {
+          "year": "2026",
+          "q1": 0.1434,
+          "q2": 0.1434,
+          "q3": null,
+          "q4": null
+        }
+      ],
+      "loan_repayment": [
+        {
+          "year": "2026",
+          "existing": 1500,
+          "refinance": 0
+        },
+        {
+          "year": "2027",
+          "existing": 1775,
+          "refinance": 0
+        },
+        {
+          "year": "2028",
+          "existing": 885,
+          "refinance": 622
+        }
+      ],
+      "avg_remaining_leasehold": "52.3 years",
+      "total_asset_size_mthb": 13
     }
   ]
 }
