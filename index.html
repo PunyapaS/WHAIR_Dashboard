@@ -251,6 +251,28 @@ const dashedPlugin={id:'dashedSep',afterDraw(chart){
 }};
 Chart.register(dashedPlugin);
 
+// Stacked total label plugin — draws sum of all datasets above each bar
+const totalLabelPlugin={id:'stackTotal',afterDatasetsDraw(chart){
+  if(!chart.config.options.showTotal) return;
+  const{ctx,data,scales:{x,y}}=chart;
+  ctx.save();
+  ctx.font='bold 10px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';
+  ctx.fillStyle=chart.config.options.totalColor||'#1F3864';
+  ctx.textAlign='center';
+  ctx.textBaseline='bottom';
+  data.labels.forEach((_,i)=>{
+    let total=0;
+    data.datasets.forEach(ds=>{const v=ds.data[i];if(v!=null)total+=v;});
+    if(total>0){
+      const xPx=x.getPixelForValue(i);
+      const yPx=y.getPixelForValue(total);
+      ctx.fillText(total.toFixed(4),xPx,yPx-4);
+    }
+  });
+  ctx.restore();
+}};
+Chart.register(totalLabelPlugin);
+
 // ── INIT ──
 async function init(){
   try{
@@ -665,7 +687,7 @@ function buildPage4(){
     {label:'Q2',data:dh.map(x=>x.q2),backgroundColor:dh.map((_,i)=>i<=DSEP?B[5]:B[3]),borderSkipped:false},
     {label:'Q3',data:dh.map(x=>x.q3),backgroundColor:dh.map((_,i)=>i<=DSEP?B[3]:B[2]),borderSkipped:false},
     {label:'Q4',data:dh.map(x=>x.q4),backgroundColor:dh.map((_,i)=>i<=DSEP?B[1]:B[0]),borderSkipped:false}
-  ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:DSEP,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{stacked:true,ticks:{color:tm,font:{size:10}}},y:{stacked:true,ticks:{color:tm,font:{size:10},callback:v=>v?v.toFixed(2):''},grid:{color:gl}}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,sepIdx:DSEP,showTotal:true,plugins:{legend:{labels:{font:{size:10},color:tm,boxWidth:10}}},scales:{x:{stacked:true,ticks:{color:tm,font:{size:10}}},y:{stacked:true,suggestedMax:Math.max(...dh.map(x=>(x.q1||0)+(x.q2||0)+(x.q3||0)+(x.q4||0)))*1.18,ticks:{color:tm,font:{size:10},callback:v=>v?v.toFixed(2):''},grid:{color:gl}}}}});
 
   document.getElementById('distInfo').innerHTML=`
     <div class="dist-row"><span>Distribution period</span><span>${q.dpu_period}</span></div>
